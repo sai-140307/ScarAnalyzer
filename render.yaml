@@ -1,0 +1,16 @@
+# One-click deploy on Render: New > Blueprint > select this repo.
+services:
+  - type: web
+    name: scaranalyzer
+    runtime: docker
+    plan: starter            # a paid plan is needed for the persistent disk below
+    healthCheckPath: /health
+    envVars:
+      - key: SCAR_DATA_DIR
+        value: /data
+      - key: SCAR_CORS_ORIGINS
+        value: "*"
+    disk:
+      name: scar-data
+      mountPath: /data
+      sizeGB: 1

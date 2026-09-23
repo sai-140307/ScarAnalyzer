@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDF1EE">
+<!-- Leave empty when the app is served by the ScarAnalyzer API itself.
+     Set to the API URL (e.g. https://scaranalyzer.onrender.com) if you host this page elsewhere. -->
+<meta name="scar-api" content="">
+<title>ScarAnalyzer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230D5C6B'/><path d='M7 20c4-7 8-9 18-8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,750&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1EE; --card:#FFFFFF; --ink:#15252A; --ink-soft:#51616A; --ink-faint:#8A979C;
+  --line:#D5DDD9; --line-soft:#E4EAE7;
+  --teal:#0D5C6B; --teal-dark:#094652; --teal-tint:#DCEBEC;
+  --heal:#2E7A4E; --heal-tint:#DDEFE3;
+  --watch:#A5620A; --watch-tint:#F6E9D3;
+  --worse:#B3261E; --worse-tint:#F7DEDB;
+  --display:'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --body:'Figtree', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --r-sm:8px; --r-md:14px; --r-lg:22px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+img{max-width:100%;display:block}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:var(--teal)}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px;border-radius:6px}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(237,241,238,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
+.top-in{max-width:1040px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:650;font-size:19px;text-decoration:none;color:var(--ink)}
+.brand svg{width:28px;height:28px}
+.top-link{font-size:14px;font-weight:600;color:var(--ink-soft);padding:8px 10px;border-radius:8px}
+.top-link:hover{background:var(--line-soft);color:var(--ink)}
+
+main{max-width:1040px;margin:0 auto;padding:28px 20px 80px}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:999px;font-weight:600;font-size:15px;border:1.5px solid transparent;transition:background .15s,border-color .15s;min-height:46px;text-decoration:none}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-dark)}
+.btn-primary:disabled{background:var(--ink-faint);cursor:progress}
+.btn-quiet{border-color:var(--line);background:var(--card);color:var(--ink)}
+.btn-quiet:hover{border-color:var(--ink-faint)}
+.btn-danger{color:var(--worse);border-color:#E7C3BF;background:var(--card)}
+.btn-danger:hover{background:var(--worse-tint)}
+.btn-block{width:100%}
+
+/* ---------- home ---------- */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+h1{font-family:var(--display);font-weight:650;font-size:clamp(30px,5vw,42px);line-height:1.08;letter-spacing:-.015em}
+h2{font-family:var(--display);font-weight:650;font-size:21px;line-height:1.2;letter-spacing:-.005em}
+h3{font-size:16px;font-weight:700}
+.muted{color:var(--ink-soft)}
+.small{font-size:14px}
+
+.scar-list{display:grid;gap:12px}
+.scar-row{display:grid;grid-template-columns:76px 1fr auto;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r-md);padding:12px;text-align:left;width:100%}
+.scar-row:hover{border-color:var(--line)}
+.thumb{width:76px;height:76px;border-radius:10px;object-fit:cover;background:var(--teal-tint)}
+.thumb-empty{display:grid;place-items:center;color:var(--teal)}
+.thumb-empty svg{width:28px;height:28px}
+.scar-row .name{font-weight:700;font-size:17px}
+.scar-row .meta{font-size:14px;color:var(--ink-soft)}
+@media (max-width:560px){.scar-row{grid-template-columns:64px 1fr}.scar-row .thumb{width:64px;height:64px}.scar-row .chip{grid-column:2;justify-self:start}}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.chip::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.s-improving{color:var(--heal);background:var(--heal-tint)}
+.s-worsening{color:var(--worse);background:var(--worse-tint)}
+.s-stagnating{color:var(--watch);background:var(--watch-tint)}
+.s-stable,.s-baseline,.s-empty{color:var(--teal);background:var(--teal-tint)}
+
+.empty{background:var(--card);border-radius:var(--r-lg);padding:40px 28px;max-width:640px}
+.empty h2{font-size:26px;margin-bottom:8px}
+.steps{list-style:none;counter-reset:s;margin:24px 0 28px;display:grid;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--teal-tint);color:var(--teal);font-weight:700;display:grid;place-items:center;font-size:14px}
+
+/* ---------- scar page ---------- */
+.back{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--ink-soft);text-decoration:none;margin-bottom:18px}
+.back:hover{color:var(--ink)}
+.scar-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.scar-head .sub{color:var(--ink-soft);margin-top:6px}
+.head-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.verdict{border-radius:var(--r-lg);padding:28px 28px 8px;background:var(--card);border:1px solid var(--line-soft);margin-bottom:20px;position:relative;overflow:hidden}
+.verdict::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--tone)}
+.verdict{--tone:var(--teal)}
+.verdict.s-improving{--tone:var(--heal);background:var(--card)}
+.verdict.s-worsening{--tone:var(--worse);background:var(--card)}
+.verdict.s-stagnating{--tone:var(--watch);background:var(--card)}
+.verdict.s-stable,.verdict.s-baseline{background:var(--card)}
+.verdict-word{font-family:var(--display);font-weight:750;font-size:clamp(40px,8vw,68px);line-height:1;letter-spacing:-.025em;color:var(--tone)}
+.verdict-summary{margin-top:14px;font-size:17px;max-width:62ch;color:var(--ink)}
+.verdict-chart{margin:18px -8px 0}
+.verdict-chart svg{width:100%;height:auto;display:block}
+.chart-dot{cursor:pointer}
+.chart-dot:hover circle.hit{fill:rgba(13,92,107,.12)}
+
+.review{display:flex;gap:14px;align-items:flex-start;background:var(--worse-tint);color:#6E1812;border-radius:var(--r-md);padding:16px 18px;margin-bottom:20px}
+.review svg{width:22px;height:22px;flex:none;margin-top:2px}
+.review strong{display:block;font-size:16px}
+.note{display:flex;gap:12px;background:var(--watch-tint);color:#5E3905;border-radius:var(--r-md);padding:14px 16px;margin-bottom:20px;font-size:15px}
+.note svg{width:20px;height:20px;flex:none;margin-top:2px}
+
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border-radius:var(--r-md);overflow:hidden;margin-bottom:28px;border:1px solid var(--line-soft)}
+.fact{background:var(--card);padding:16px 18px}
+.fact .k{font-size:13px;color:var(--ink-soft);font-weight:500}
+.fact .v{font-family:var(--display);font-weight:650;font-size:26px;line-height:1.2;margin-top:2px}
+.fact .v small{font-family:var(--body);font-size:14px;font-weight:500;color:var(--ink-soft)}
+.fact .h{font-size:13px;color:var(--ink-soft)}
+@media (max-width:760px){.facts{grid-template-columns:1fr 1fr}}
+
+.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:22px}
+.panel + .panel{margin-top:20px}
+.panel h2{margin-bottom:14px}
+
+.changes{display:grid;gap:2px}
+.change{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.change:last-child{border-bottom:0}
+.change .lbl{font-weight:600}
+.change .eff{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.eff.better{color:var(--heal)} .eff.worse{color:var(--worse)} .eff.no_change{color:var(--ink-faint)}
+.eff svg{width:16px;height:16px}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.compare figure{margin:0}
+.compare img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--line-soft)}
+.compare figcaption{font-size:13px;color:var(--ink-soft);margin-top:6px}
+
+.sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.shot{text-align:left;border-radius:10px;overflow:hidden;background:var(--bg)}
+.shot img{width:100%;aspect-ratio:1;object-fit:cover}
+.shot span{display:block;font-size:12.5px;padding:6px 8px;color:var(--ink-soft)}
+.shot.unclear img{opacity:.55}
+
+.alerts{display:grid;gap:10px}
+.alert{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:15px}
+.alert i{width:10px;height:10px;border-radius:50%;margin-top:7px;margin-left:4px}
+.alert.warning i{background:var(--worse)} .alert.info i{background:var(--watch)} .alert.positive i{background:var(--heal)}
+
+.care{display:grid;gap:0}
+.care-item{padding:14px 0;border-bottom:1px solid var(--line-soft)}
+.care-item:last-child{border-bottom:0;padding-bottom:0}
+.care-item:first-child{padding-top:0}
+.care-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.care-item h3{font-size:16px}
+.doc-tag{font-size:12px;font-weight:600;color:var(--teal);background:var(--teal-tint);padding:3px 9px;border-radius:999px;white-space:nowrap}
+.care-item p{font-size:15px;color:var(--ink-soft);margin-top:4px}
+.care-item .when{font-size:14px;margin-top:6px;color:var(--ink)}
+
+.disclaimer{font-size:13px;color:var(--ink-soft);margin-top:28px;max-width:70ch}
+
+/* ---------- dialogs ---------- */
+dialog{border:0;border-radius:var(--r-lg);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--card);color:var(--ink);box-shadow:0 24px 60px rgba(21,37,42,.25)}
+dialog::backdrop{background:rgba(21,37,42,.45)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 0}
+.dlg-body{padding:18px 22px 22px;display:grid;gap:16px;overflow:auto}
+.x{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--ink-soft)}
+.x:hover{background:var(--line-soft)}
+.x svg{width:20px;height:20px}
+@media (max-width:560px){
+  dialog{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:var(--r-lg) var(--r-lg) 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+}
+
+label.field{display:grid;gap:6px;font-weight:600;font-size:14px}
+.field input,.field select,.field textarea{border:1.5px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;background:#fff;font-weight:400;font-size:16px;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--teal)}
+.field textarea{min-height:70px;resize:vertical}
+.hint{font-weight:400;color:var(--ink-soft);font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick-btn{border:1.5px dashed var(--ink-faint);border-radius:var(--r-md);padding:22px 12px;display:grid;justify-items:center;gap:8px;font-weight:600;color:var(--teal);background:var(--bg)}
+.pick-btn:hover{border-color:var(--teal);background:var(--teal-tint)}
+.pick-btn svg{width:28px;height:28px}
+.preview{display:grid;gap:10px}
+.mark-wrap{background:#0f1b1e;border-radius:var(--r-md);display:grid;place-items:center;padding:8px;overflow:hidden}
+.marker{position:relative;display:inline-block;touch-action:none;cursor:crosshair;line-height:0;max-width:100%}
+.marker img{display:block;max-width:100%;max-height:340px;width:auto;height:auto;user-select:none;-webkit-user-drag:none;pointer-events:none;border-radius:6px}
+.roi{position:absolute;border:2.5px solid #fff;border-radius:6px;box-shadow:0 0 0 2px var(--teal),0 0 0 9999px rgba(0,0,0,.38);pointer-events:none}
+.mark-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.mark-hint{font-size:14.5px;font-weight:600}
+.mark-hint.done{color:var(--heal)}
+.link-btn{font-size:14px;font-weight:600;color:var(--teal);text-decoration:underline;padding:4px}
+.guide{display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center;background:var(--bg);border-radius:var(--r-md);padding:10px;font-size:14px}
+.guide .gimg{position:relative;line-height:0}
+.guide img{width:84px;height:84px;object-fit:cover;border-radius:8px}
+.date-note{font-weight:400;font-size:13px;color:var(--ink-soft)}
+.date-note.warn{color:var(--watch);font-weight:600}
+
+.tips{font-size:14px;background:var(--bg);border-radius:var(--r-md);padding:12px 14px}
+.tips summary{font-weight:600;cursor:pointer}
+.tips ul{margin:8px 0 0 18px;color:var(--ink-soft);display:grid;gap:3px}
+
+fieldset{border:0;display:grid;gap:8px}
+legend{font-weight:600;font-size:14px;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{position:relative}
+.chips input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chips span{display:inline-block;padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);font-size:14.5px;font-weight:500;background:#fff}
+.chips input:checked + span{border-color:var(--teal);background:var(--teal-tint);color:var(--teal-dark);font-weight:600}
+.chips input:focus-visible + span{outline:3px solid var(--teal);outline-offset:2px}
+
+.err{color:var(--worse);font-size:14px;font-weight:500}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.viewer .marker img{max-height:60vh}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);padding:12px;border-radius:var(--r-sm);font-size:15px;word-break:break-all;user-select:all}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-weight:500;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100vw - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.loading{display:grid;place-items:center;padding:80px 0;color:var(--ink-soft)}
+.loading .spin{border-color:var(--line);border-top-color:var(--teal);width:28px;height:28px;margin-bottom:12px}
+.foot{max-width:1040px;margin:0 auto;padding:0 20px 40px;font-size:13px;color:var(--ink-faint);display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+.foot button{color:var(--ink-soft);text-decoration:underline;font-size:13px}
+
+.fresh .verdict-word{animation:rise .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+@media print{
+  .top,.foot,.head-actions,.back,.no-print,dialog,.toast{display:none!important}
+  body{background:#fff}
+  main{padding:0}
+  .panel,.verdict,.facts{break-inside:avoid;border-color:#ccc}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#/" aria-label="ScarAnalyzer home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0D5C6B"/><path d="M7 20c4-7 8-9 18-8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      ScarAnalyzer
+    </a>
+    <a class="top-link" href="#/">My scars</a>
+  </div>
+</header>
+
+<main id="app" tabindex="-1"><div class="loading"><div class="spin"></div>Loading…</div></main>
+
+<footer class="foot">
+  <span>For information only. Not a medical diagnosis.</span>
+  <button type="button" id="deviceBtn">Use on another device</button>
+</footer>
+
+<!-- Add / edit scar -->
+<dialog id="scarDlg" aria-labelledby="scarDlgTitle">
+  <form method="dialog" id="scarForm">
+    <div class="dlg-head"><h2 id="scarDlgTitle">Add a scar</h2><button class="x" value="cancel" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="dlg-body">
+      <label class="field">Name <span class="hint">Something you'll recognise, like "Knee surgery"</span>
+        <input name="nickname" maxlength="60" placeholder="e.g. Appendix scar"></label>
+      <div class="two">
+        <label class="field">Where is it?
+          <select name="body_region" required>
+            <option value="face">Face</option><option value="neck">Neck</option><option value="chest">Chest</option>
+            <option value="shoulder">Shoulder</option><option value="back">Back</option><option value="abdomen">Stomach</option>
+            <option value="arm" selected>Arm</option><option value="elbow">Elbow</option><option value="hand">Hand</option>
+            <option value="leg">Leg</option><option value="knee">Knee</option><option value="foot">Foot</option><option value="other">Somewhere else</option>
+          </select></label>
+        <label class="field">What caused it?
+          <select name="cause">
+            <option value="surgical">Surgery</option><option value="burn">Burn</option><option value="trauma">Injury or cut</option>
+            <option value="acne">Acne</option><option value="other">Other</option>
+          </select></label>
+      </div>
+      <label class="field">When did it happen? <span class="hint">An approximate date is fine</span>
+        <input type="date" name="date_of_injury"></label>
+      <p class="err" id="scarErr" hidden></p>
+      <button class="btn btn-primary btn-block" type="submit" value="save" id="scarSave">Save scar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Add photo -->
+<dialog id="photoDlg" aria-labelledby="photoDlgTitle">
+  <form method="dialog" id="photoForm">
+    <div class="dlg-head"><h2 id="photoDlgTitle">Add a photo</h2><button class="x" value="cancel" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="dlg-body">
+      <div id="pickArea" class="pick">
+        <button type="button" class="pick-btn" id="camBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take a photo</button>
+        <button type="button" class="pick-btn" id="galBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17l5-4 4 3 3-2 4 3"/></svg>Choose from gallery</button>
+        <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+        <input type="file" id="galInput" accept="image/*" hidden>
+      </div>
+      <div class="guide" id="guide" hidden><div class="gimg"><img id="guideImg" alt="Your last photo"></div><span>Try to take it like your last photo: <strong>same distance, angle and light</strong>. This keeps your results accurate.</span></div>
+      <div class="preview" id="preview" hidden>
+        <div class="mark-wrap"><div class="marker" id="marker"><img id="previewImg" alt="Selected photo"><div class="roi" id="roiBox" hidden></div></div></div>
+        <div class="mark-bar"><span class="mark-hint" id="markHint">Drag a box around the scar, or tap on it.</span><button type="button" class="link-btn" id="repick">Choose a different photo</button></div>
+      </div>
+
+      <details class="tips">
+        <summary>How to take a good photo</summary>
+        <ul>
+          <li>Use daylight or a bright room, with the flash off.</li>
+          <li>Hold the phone about 20 cm away, straight above the scar.</li>
+          <li>Put the scar in the centre, with some normal skin around it.</li>
+          <li>Use the same spot and distance every time.</li>
+        </ul>
+      </details>
+
+      <label class="field">When was this photo taken?
+        <input type="date" name="taken_at" id="takenAt">
+        <span class="date-note" id="dateNote" hidden></span></label>
+
+      <fieldset>
+        <legend>How does the scar look and feel today?</legend>
+        <div class="chips" role="radiogroup" aria-label="Scar height">
+          <label><input type="radio" name="shape" value="0" checked><span>Flat</span></label>
+          <label><input type="radio" name="shape" value="1"><span>Slightly raised</span></label>
+          <label><input type="radio" name="shape" value="2"><span>Raised</span></label>
+          <label><input type="radio" name="shape" value="3"><span>Very raised</span></label>
+          <label><input type="radio" name="shape" value="sunken"><span>Sunken</span></label>
+        </div>
+        <div class="chips" aria-label="Symptoms">
+          <label><input type="checkbox" name="feels_tight"><span>Feels tight</span></label>
+          <label><input type="checkbox" name="itchy"><span>Itchy</span></label>
+          <label><input type="checkbox" name="painful"><span>Painful</span></label>
+          <label><input type="checkbox" name="growing_beyond_boundary"><span>Spreading past the original wound</span></label>
+        </div>
+      </fieldset>
+
+      <label class="field">Notes <span class="hint">Optional — e.g. started using silicone gel</span>
+        <textarea name="notes" maxlength="500"></textarea></label>
+
+      <p class="err" id="photoErr" hidden></p>
+      <button class="btn btn-primary btn-block" type="submit" value="save" id="photoSave">Analyse photo</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Photo viewer -->
+<dialog id="viewDlg" aria-labelledby="viewTitle">
+  <div class="dlg-head"><h2 id="viewTitle">Photo</h2><form method="dialog"><button class="x" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form></div>
+  <div class="dlg-body viewer">
+    <div class="mark-wrap"><div class="marker" style="cursor:default"><img id="viewImg" alt=""><div class="roi" id="viewRoi" hidden></div></div></div>
+    <p id="viewNotes" class="muted small"></p>
+    <button class="btn btn-danger" id="viewDelete" type="button">Delete this photo</button>
+  </div>
+</dialog>
+
+<!-- Device code -->
+<dialog id="devDlg" aria-labelledby="devTitle">
+  <div class="dlg-head"><h2 id="devTitle">Use on another device</h2><form method="dialog"><button class="x" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form></div>
+  <div class="dlg-body">
+    <p class="small">This is your personal tracking code. Enter it on another phone or computer to see the same scars. Keep it private.</p>
+    <div class="code" id="devCode"></div>
+    <button class="btn btn-quiet" type="button" id="copyCode">Copy code</button>
+    <label class="field">Have a code from another device?
+      <input id="devInput" placeholder="Paste your tracking code" autocomplete="off"></label>
+    <button class="btn btn-primary" type="button" id="devUse">Use this code</button>
+  </div>
+</dialog>
+
+<!-- Confirm -->
+<dialog id="confirmDlg" aria-labelledby="confirmTitle">
+  <div class="dlg-body">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmText" class="muted"></p>
+    <div class="two"><button class="btn btn-quiet" id="confirmNo" type="button">Cancel</button><button class="btn btn-danger" id="confirmYes" type="button">Delete</button></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------------- config ---------------- */
+const metaApi = document.querySelector('meta[name="scar-api"]');
+const API = ((window.SCAR_API_BASE || (metaApi && metaApi.content) || '')).replace(/\/$/, '');
+
+const REGION = {face:'Face',neck:'Neck',chest:'Chest',shoulder:'Shoulder',back:'Back',abdomen:'Stomach',arm:'Arm',elbow:'Elbow',hand:'Hand',leg:'Leg',knee:'Knee',foot:'Foot',other:'Other'};
+const CAUSE = {surgical:'surgery',burn:'burn',trauma:'injury',acne:'acne',other:''};
+const TYPE = {normal:'Typical healing scar',hypertrophic:'Raised scar',keloid:'Possible keloid',atrophic:'Sunken scar',contracture:'Tight scar'};
+const GRADE = {minimal:'Minimal',mild:'Mild',moderate:'Moderate',severe:'Severe'};
+const STATUS = {
+  baseline:{word:'First photo saved', chip:'First photo'},
+  improving:{word:'Healing well', chip:'Healing well'},
+  stable:{word:'No major change', chip:'No major change'},
+  stagnating:{word:'Healing has slowed', chip:'Healing slowed'},
+  worsening:{word:'Getting worse', chip:'Getting worse'},
+  empty:{word:'No photos yet', chip:'No photos yet'},
+};
+
+/* ---------------- helpers ---------------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = (d, opts={day:'numeric',month:'short',year:'numeric'}) => d ? new Intl.DateTimeFormat(undefined, opts).format(new Date(d)) : '';
+const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const isoDay = t => { const d=new Date(t); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const ago = d => {
+  if(!d) return '';
+  const days = Math.round((Date.now() - new Date(d)) / 864e5);
+  if(days < 1) return 'today'; if(days === 1) return 'yesterday';
+  if(days < 14) return days + ' days ago'; if(days < 60) return Math.round(days/7) + ' weeks ago';
+  if(days < 730) return Math.round(days/30.4) + ' months ago'; return Math.round(days/365) + ' years ago';
+};
+const scarName = s => s.nickname || ((REGION[s.body_region] || 'Scar') + (CAUSE[s.cause] ? ' ' + CAUSE[s.cause] + ' scar' : ' scar'));
+
+function store(k, v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return store.mem?.[k]; } }
+function patientId(){
+  let id = store('scar.patient');
+  if(!id){
+    id = 'p-' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
+    store('scar.patient', id); store.mem = {'scar.patient': id};
+  }
+  return id;
+}
+
+async function api(path, opts={}){
+  let res;
+  try{ res = await fetch(API + path, opts); }
+  catch(e){ throw new Error("Can't reach the server. Check your internet connection and try again."); }
+  if(res.status === 204) return null;
+  let data = null; try{ data = await res.json(); }catch(e){}
+  if(!res.ok){
+    let msg = data && data.detail;
+    if(Array.isArray(msg)) msg = 'Please check the details you entered.';
+    throw new Error(msg || 'Something went wrong. Please try again.');
+  }
+  return data;
+}
+const img = u => u ? API + u : '';
+
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'), 3200); }
+
+function confirmBox(title, text){
+  return new Promise(res => {
+    const d = $('#confirmDlg'); $('#confirmTitle').textContent = title; $('#confirmText').textContent = text;
+    const done = v => { d.close(); res(v); };
+    $('#confirmYes').onclick = () => done(true); $('#confirmNo').onclick = () => done(false);
+    d.onclose = () => res(false);
+    d.showModal();
+  });
+}
+
+const ICON = {
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  flat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
+  scar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 15c3-5 6-6 14-5"/><path d="M8 12.5l1 2M11 11l.8 2M14 10.3l.5 2"/></svg>',
+};
+
+/* ---------------- router ---------------- */
+const app = $('#app');
+let current = { scarId:null, scar:null, report:null, obs:[] };
+
+function route(){
+  const h = location.hash || '#/';
+  const m = h.match(/^#\/scar\/([\w-]+)/);
+  if(m) renderScar(m[1]); else renderHome();
+}
+window.addEventListener('hashchange', route);
+
+function loading(){ app.innerHTML = '<div class="loading"><div class="spin"></div>Loading…</div>'; }
+function failed(msg, retry){
+  app.innerHTML = `<div class="empty"><h2>Couldn't load this page</h2><p class="muted">${esc(msg)}</p><p style="margin-top:20px"><button class="btn btn-primary" id="retry">Try again</button></p></div>`;
+  $('#retry').onclick = retry;
+}
+
+/* ---------------- home ---------------- */
+async function renderHome(){
+  document.title = 'My scars · ScarAnalyzer';
+  loading();
+  let scars;
+  try{ scars = await api(`/patients/${encodeURIComponent(patientId())}/scars`); }
+  catch(e){ return failed(e.message, renderHome); }
+
+  if(!scars.length){
+    app.innerHTML = `
+      <section class="empty">
+        <h2>Track how your scar is healing</h2>
+        <p class="muted">Take a photo every week or two. We'll compare them and tell you whether your scar is getting better or worse.</p>
+        <ol class="steps">
+          <li><span><strong>Add your scar</strong><br><span class="muted small">Tell us where it is and when it happened.</span></span></li>
+          <li><span><strong>Take a photo</strong><br><span class="muted small">In good light, from about 20 cm away.</span></span></li>
+          <li><span><strong>Repeat every 1–2 weeks</strong><br><span class="muted small">Your results get more accurate with every photo.</span></span></li>
+        </ol>
+        <button class="btn btn-primary" id="addFirst">${ICON.plus} Add a scar</button>
+      </section>`;
+    $('#addFirst').onclick = () => openScarDlg();
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="page-head">
+      <div><h1>Your scars</h1><p class="muted" style="margin-top:6px">${scars.length} ${scars.length===1?'scar':'scars'} being tracked</p></div>
+      <button class="btn btn-primary" id="addScar">${ICON.plus} Add a scar</button>
+    </div>
+    <div class="scar-list">
+      ${scars.map(s => {
+        const st = STATUS[s.status] || STATUS.stable;
+        const meta = s.observation_count
+          ? `${s.observation_count} ${s.observation_count===1?'photo':'photos'} · last photo ${ago(s.last_photo_at)}`
+          : 'No photos yet — add one to start';
+        return `<a class="scar-row" href="#/scar/${esc(s.scar_id)}" style="text-decoration:none;color:inherit">
+          ${s.thumbnail_url ? `<img class="thumb" src="${esc(img(s.thumbnail_url))}" alt="" loading="lazy">` : `<div class="thumb thumb-empty">${ICON.scar}</div>`}
+          <div><div class="name">${esc(scarName(s))}</div><div class="meta">${esc(meta)}</div></div>
+          <span class="chip s-${esc(s.status)}">${esc(s.needs_professional_review && s.status!=='worsening' ? 'See a doctor' : st.chip)}</span>
+        </a>`;
+      }).join('')}
+    </div>`;
+  $('#addScar').onclick = () => openScarDlg();
+}
+
+/* ---------------- scar page ---------------- */
+async function renderScar(id, fresh=false){
+  if(current.scarId !== id) loading();
+  let scar, report, obs;
+  try{
+    [scar, report, obs] = await Promise.all([api(`/scars/${id}`), api(`/scars/${id}/report`), api(`/scars/${id}/observations`)]);
+  }catch(e){ return failed(e.message, () => renderScar(id)); }
+  current = { scarId:id, scar, report, obs };
+  const name = scarName(scar);
+  document.title = name + ' · ScarAnalyzer';
+  const st = STATUS[report.status] || STATUS.stable;
+  const since = scar.date_of_injury ? `Since ${fmtDate(scar.date_of_injury)} (${ago(scar.date_of_injury)})` : `Added ${fmtDate(scar.created_at)}`;
+
+  const noPhotos = !obs.length;
+  const review = report.needs_professional_review ? `
+    <div class="review" role="alert">${ICON.warn}<div><strong>We recommend seeing a dermatologist</strong>
+    Some changes in your photos are worth a professional look. Save this report and bring it to your appointment.</div></div>` : '';
+  const tips = (report.photo_tips||[]).length ? `
+    <div class="note">${ICON.info}<div><strong>About your latest photo:</strong> ${report.photo_tips.map(esc).join(' ')}</div></div>` : '';
+
+  const facts = noPhotos ? '' : `
+    <div class="facts">
+      <div class="fact"><div class="k">Scar score</div><div class="v">${Math.round(report.current_severity)}<small> / 100</small></div><div class="h">Lower is better</div></div>
+      <div class="fact"><div class="k">Level</div><div class="v">${esc(GRADE[report.clinical_grade]||'—')}</div><div class="h">${esc(TYPE[report.scar_type]||'')}</div></div>
+      <div class="fact"><div class="k">Since first photo</div><div class="v">${report.observation_count>1 ? Math.abs(Math.round(report.severity_change)) : '—'}</div><div class="h">${report.observation_count>1 ? (report.severity_change>0?'points worse':report.severity_change<0?'points better':'no change') : 'Need 2+ photos'}</div></div>
+      <div class="fact"><div class="k">Photos</div><div class="v">${report.observation_count}</div><div class="h">${obs.length ? 'Latest ' + ago(obs[obs.length-1].taken_at) : ''}</div></div>
+    </div>`;
+
+  const changes = (report.changes||[]).length ? `
+    <section class="panel"><h2>What changed</h2><div class="changes">
+      ${report.changes.map(c => {
+        const eff = c.effect;
+        const icon = eff==='no_change' ? ICON.flat : (c.trend==='increasing' ? ICON.up : ICON.down);
+        const word = eff==='better' ? 'Better' : eff==='worse' ? 'Worse' : 'No real change';
+        return `<div class="change"><span class="lbl">${esc(c.label)}</span><span class="eff ${eff}">${icon}${word}</span></div>`;
+      }).join('')}
+    </div></section>` : '';
+
+  const alerts = (report.alerts||[]).length ? `
+    <section class="panel"><h2>Things to know</h2><div class="alerts">
+      ${report.alerts.map(a => `<div class="alert ${esc(a.level)}"><i aria-hidden="true"></i><span>${esc(a.message)}</span></div>`).join('')}
+    </div></section>` : '';
+
+  const compare = obs.length >= 2 ? `
+    <section class="panel"><h2>First photo and latest</h2><div class="compare">
+      <figure><img src="${esc(img(obs[0].image_url))}" alt="First photo"><figcaption>${fmtDate(obs[0].taken_at)}</figcaption></figure>
+      <figure><img src="${esc(img(obs[obs.length-1].image_url))}" alt="Latest photo"><figcaption>${fmtDate(obs[obs.length-1].taken_at)}</figcaption></figure>
+    </div></section>` : '';
+
+  const photos = obs.length ? `
+    <section class="panel"><h2>All photos</h2><div class="sheet">
+      ${[...obs].reverse().map(o => `<button class="shot ${o.photo_ok?'':'unclear'}" data-obs="${esc(o.id)}" type="button">
+        <img src="${esc(img(o.image_url))}" alt="Photo from ${esc(fmtDate(o.taken_at))}" loading="lazy"><span>${fmtDate(o.taken_at,{day:'numeric',month:'short'})}${o.photo_ok?'':' · unclear'}</span></button>`).join('')}
+    </div></section>` : '';
+
+  const care = (report.suggestions||[]).length ? `
+    <section class="panel"><h2>Care that may help</h2><div class="care">
+      ${report.suggestions.map(s => `<div class="care-item">
+        <div class="care-top"><h3>${esc(s.category)}</h3>${s.professional_required ? '<span class="doc-tag">With a doctor</span>' : ''}</div>
+        <p>${esc(s.reason)} ${esc(s.description)}</p>
+        <div class="when">${esc(s.timing)}</div></div>`).join('')}
+    </div></section>` : '';
+
+  app.innerHTML = `
+    <a class="back" href="#/">${ICON.back} All scars</a>
+    <div class="scar-head">
+      <div><h1>${esc(name)}</h1><p class="sub">${esc(REGION[scar.body_region]||'')}${scar.body_region?' · ':''}${esc(since)}</p></div>
+      <div class="head-actions">
+        <button class="btn btn-primary" id="addPhoto">${ICON.camera} Add a photo</button>
+        ${noPhotos ? '' : '<button class="btn btn-quiet" id="saveReport">Save report</button>'}
+        <button class="btn btn-quiet" id="editScar">Edit</button>
+      </div>
+    </div>
+    ${review}
+    <section class="verdict s-${esc(report.status)} ${fresh?'fresh':''}" aria-live="polite">
+      <div class="verdict-word">${esc(st.word)}</div>
+      <p class="verdict-summary">${esc(report.summary)}</p>
+      <div class="verdict-chart">${noPhotos ? '<div style="height:20px"></div>' : chart(report.severity_timeline, report.status)}</div>
+    </section>
+    ${tips}
+    ${facts}
+    <div class="grid2">
+      <div>${changes}${compare}${photos}</div>
+      <div>${alerts}${care}</div>
+    </div>
+    <p class="disclaimer">${esc(report.disclaimer)}</p>
+    <p class="no-print" style="margin-top:24px"><button class="btn btn-danger" id="delScar">Delete this scar</button></p>`;
+
+  $('#addPhoto').onclick = openPhotoDlg;
+  $('#editScar').onclick = () => openScarDlg(scar);
+  const sr = $('#saveReport'); if(sr) sr.onclick = () => window.print();
+  $('#delScar').onclick = async () => {
+    if(!await confirmBox('Delete this scar?', 'All its photos and results will be removed. This can\'t be undone.')) return;
+    try{ await api(`/scars/${id}`, {method:'DELETE'}); toast('Scar deleted'); location.hash = '#/'; }
+    catch(e){ toast(e.message); }
+  };
+  app.querySelectorAll('[data-obs]').forEach(b => b.onclick = () => openViewer(b.dataset.obs));
+  if(fresh) window.scrollTo({top:0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+}
+
+
+/* Progress chart: scar score over time, lower is better. */
+function chart(points, status){
+  if(!points || !points.length) return '';
+  const box = document.querySelector('main');
+  const W = Math.round(Math.min(720, Math.max(300, ((box && box.clientWidth) || 720) - 70)));
+  const H = W < 480 ? 180 : 210, L=12, R=74, T=18, B=34;
+  const tone = {improving:'#2E7A4E', worsening:'#B3261E', stagnating:'#A5620A'}[status] || '#0D5C6B';
+  const ts = points.map(p => new Date(p.timestamp).getTime());
+  const t0 = Math.min(...ts), t1 = Math.max(...ts);
+  const span = t1 - t0;
+  const xs = points.map((p,i) => points.length===1 ? (L + (W-L-R)/2) : L + (span > 2*864e5 ? (ts[i]-t0)/span : i/(points.length-1)) * (W-L-R));
+  const vals = points.map(p => p.composite_score);
+  const maxV = Math.max(60, Math.ceil(Math.max(...vals)/20)*20), minV = 0;
+  const y = v => T + (1 - (v-minV)/(maxV-minV)) * (H-T-B);
+  const bands = [[20,'Minimal'],[40,'Mild'],[60,'Moderate'],[80,'Severe']].filter(b => b[0] <= maxV);
+  let grid = '';
+  let prev = 0;
+  bands.forEach(([v,label]) => {
+    grid += `<line x1="${L}" x2="${W-R+6}" y1="${y(v)}" y2="${y(v)}" stroke="#E4EAE7" stroke-dasharray="3 5"/>`;
+    grid += `<text x="${W-R+12}" y="${(y(v)+y(prev))/2+4}" font-size="12" fill="#8A979C" font-family="Figtree, sans-serif">${label}</text>`;
+    prev = v;
+  });
+  if(maxV > 80) grid += `<text x="${W-R+12}" y="${(y(maxV)+y(80))/2+4}" font-size="12" fill="#8A979C" font-family="Figtree, sans-serif">Severe</text>`;
+  grid += `<line x1="${L}" x2="${W-R+6}" y1="${y(0)}" y2="${y(0)}" stroke="#D5DDD9"/>`;
+  const path = xs.map((x,i) => (i?'L':'M') + x.toFixed(1) + ' ' + y(vals[i]).toFixed(1)).join(' ');
+  const area = points.length > 1 ? `<path d="${path} L ${xs[xs.length-1]} ${y(0)} L ${xs[0]} ${y(0)} Z" fill="${tone}" opacity=".07"/>` : '';
+  const dots = points.map((p,i) => `<g class="chart-dot" data-obs="${esc(p.observation_id)}" tabindex="0" role="button" aria-label="Photo from ${esc(fmtDate(p.timestamp))}, score ${Math.round(p.composite_score)}">
+      <circle class="hit" cx="${xs[i]}" cy="${y(vals[i])}" r="16" fill="transparent"/>
+      <circle cx="${xs[i]}" cy="${y(vals[i])}" r="${i===points.length-1?6.5:4.5}" fill="${i===points.length-1?tone:'#fff'}" stroke="${tone}" stroke-width="2.5" ${p.reliable?'':'stroke-dasharray="2 2"'}/></g>`).join('');
+  const labels = `<text x="${xs[0]}" y="${H-10}" font-size="12.5" fill="#51616A" font-family="Figtree, sans-serif" text-anchor="${points.length===1?'middle':'start'}">${fmtDate(points[0].timestamp,{day:'numeric',month:'short'})}</text>` +
+    (points.length>1 ? `<text x="${xs[xs.length-1]}" y="${H-10}" font-size="12.5" fill="#51616A" font-family="Figtree, sans-serif" text-anchor="end">${fmtDate(points[points.length-1].timestamp,{day:'numeric',month:'short'})}</text>` : '');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scar score over time. Lower is better.">${grid}${area}<path d="${path}" fill="none" stroke="${tone}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}${labels}</svg>`;
+}
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => {
+  const el = document.querySelector('.verdict-chart'); if(el && current.report && current.report.severity_timeline && current.report.severity_timeline.length) el.innerHTML = chart(current.report.severity_timeline, current.report.status);
+}, 200); });
+app.addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && e.target.matches('.chart-dot')){ e.preventDefault(); openViewer(e.target.dataset.obs); }});
+app.addEventListener('click', e => { const g = e.target.closest('.chart-dot'); if(g) openViewer(g.dataset.obs); });
+
+/* ---------------- add / edit scar ---------------- */
+let editing = null;
+function openScarDlg(scar=null){
+  editing = scar;
+  const f = $('#scarForm'); f.reset();
+  $('#scarDlgTitle').textContent = scar ? 'Edit scar' : 'Add a scar';
+  $('#scarSave').textContent = scar ? 'Save changes' : 'Save scar';
+  $('#scarErr').hidden = true;
+  f.date_of_injury.max = today();
+  if(scar){
+    f.nickname.value = scar.nickname || '';
+    f.body_region.value = scar.body_region || 'other';
+    f.cause.value = scar.cause || 'other';
+    f.date_of_injury.value = scar.date_of_injury || '';
+  }
+  $('#scarDlg').showModal();
+}
+$('#scarForm').addEventListener('submit', async e => {
+  if(e.submitter && e.submitter.value === 'cancel') return;
+  e.preventDefault();
+  const f = e.target, btn = $('#scarSave');
+  const body = { nickname: f.nickname.value.trim() || null, body_region: f.body_region.value,
+                 cause: f.cause.value, date_of_injury: f.date_of_injury.value || null };
+  btn.disabled = true; $('#scarErr').hidden = true;
+  try{
+    if(editing){
+      await api(`/scars/${editing.scar_id || editing.id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      $('#scarDlg').close(); toast('Changes saved'); renderScar(current.scarId);
+    }else{
+      const s = await api('/scars/register', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({patient_id: patientId(), ...body})});
+      $('#scarDlg').close(); toast('Scar added. Now add your first photo.');
+      current = { scarId:s.scar_id, scar:s, report:null, obs:[] };
+      location.hash = '#/scar/' + s.scar_id;
+      setTimeout(openPhotoDlg, 350);
+    }
+  }catch(err){ $('#scarErr').textContent = err.message; $('#scarErr').hidden = false; }
+  finally{ btn.disabled = false; }
+});
+
+/* ---------------- add photo ---------------- */
+let chosen = null, previewUrl = null;
+function resetPhoto(){
+  chosen = null; if(previewUrl) URL.revokeObjectURL(previewUrl); previewUrl = null;
+  $('#photoForm').reset(); $('#preview').hidden = true; $('#pickArea').hidden = false;
+  $('#photoErr').hidden = true; $('#takenAt').value = today(); $('#takenAt').max = today();
+  ['camInput','galInput'].forEach(i => $('#'+i).value = '');
+  roi = null; $('#roiBox').hidden = true; setHint(false);
+  dateSource = 'today'; checkDate();
+}
+function openPhotoDlg(){
+  resetPhoto();
+  const last = current.obs && current.obs[current.obs.length-1];
+  if(last && last.self_report){
+    const r = last.self_report, f = $('#photoForm');
+    const v = r.is_depressed ? 'sunken' : (r.height_level != null ? String(r.height_level) : '0');
+    const radio = f.querySelector(`input[name="shape"][value="${v}"]`); if(radio) radio.checked = true;
+  }
+  $('#guide').hidden = !last;
+  if(last) $('#guideImg').src = img(last.image_url);
+  $('#photoDlg').showModal();
+}
+$('#camBtn').onclick = () => $('#camInput').click();
+$('#galBtn').onclick = () => $('#galInput').click();
+$('#repick').onclick = () => { $('#preview').hidden = true; $('#pickArea').hidden = false; chosen = null; roi = null; $('#roiBox').hidden = true; setHint(false); };
+['camInput','galInput'].forEach(id => $('#'+id).addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0]; if(!file) return;
+  if(!/^image\//.test(file.type) && !/\.(heic|heif|jpe?g|png|webp)$/i.test(file.name)){
+    $('#photoErr').textContent = 'Please choose a photo (JPG, PNG or WEBP).'; $('#photoErr').hidden = false; return;
+  }
+  chosen = file;
+  if(previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(file);
+  $('#previewImg').src = previewUrl;
+  $('#preview').hidden = false; $('#pickArea').hidden = true; $('#photoErr').hidden = true;
+  roi = null; $('#roiBox').hidden = true; setHint(false);
+  if(id === 'camInput'){ $('#takenAt').value = today(); dateSource = 'today'; checkDate(); return; }
+  exifDate(file).then(d => {
+    if(d && d <= today()){ $('#takenAt').value = d; dateSource = 'photo'; }
+    else if(file.lastModified){ const m = isoDay(file.lastModified); $('#takenAt').value = m <= today() ? m : today(); dateSource = 'file'; }
+    checkDate();
+  });
+}));
+
+/* ---------- marking the scar ---------- */
+let roi = null, drag = null, dateSource = 'today';
+function setHint(done){
+  const h = $('#markHint');
+  h.textContent = done ? 'Scar marked. Drag again to adjust.' : 'Drag a box around the scar, or tap on it.';
+  h.classList.toggle('done', done);
+}
+function drawRoi(){
+  const b = $('#roiBox');
+  if(!roi){ b.hidden = true; return; }
+  b.hidden = false;
+  Object.assign(b.style, {left:(roi[0]*100)+'%', top:(roi[1]*100)+'%', width:(roi[2]*100)+'%', height:(roi[3]*100)+'%'});
+}
+function relPoint(e){
+  const r = $('#previewImg').getBoundingClientRect();
+  return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)), r];
+}
+const marker = $('#marker');
+marker.addEventListener('pointerdown', e => {
+  if(!chosen) return;
+  e.preventDefault(); marker.setPointerCapture(e.pointerId);
+  const [x, y] = relPoint(e); drag = {x, y, moved:false};
+});
+marker.addEventListener('pointermove', e => {
+  if(!drag) return;
+  const [x, y, r] = relPoint(e);
+  if(Math.abs(x - drag.x) * r.width > 8 || Math.abs(y - drag.y) * r.height > 8) drag.moved = true;
+  if(drag.moved){ roi = [Math.min(x, drag.x), Math.min(y, drag.y), Math.abs(x - drag.x), Math.abs(y - drag.y)]; drawRoi(); }
+});
+marker.addEventListener('pointerup', e => {
+  if(!drag) return;
+  const [x, y, r] = relPoint(e);
+  if(!drag.moved){  // a tap: box around the tapped point
+    const s = 0.22 * Math.min(r.width, r.height);
+    const w = s / r.width, h = s / r.height;
+    roi = [Math.min(Math.max(0, x - w/2), 1 - w), Math.min(Math.max(0, y - h/2), 1 - h), w, h];
+  }else if(roi && (roi[2] * r.width < 14 || roi[3] * r.height < 14)){
+    const cx = roi[0] + roi[2]/2, cy = roi[1] + roi[3]/2;
+    const w = Math.max(roi[2], 20 / r.width), h = Math.max(roi[3], 20 / r.height);
+    roi = [Math.max(0, Math.min(cx - w/2, 1 - w)), Math.max(0, Math.min(cy - h/2, 1 - h)), w, h];
+  }
+  drag = null; drawRoi(); setHint(!!roi); $('#photoErr').hidden = true;
+});
+marker.addEventListener('pointercancel', () => { drag = null; });
+
+/* ---------- photo date ---------- */
+function checkDate(){
+  const n = $('#dateNote'), v = $('#takenAt').value;
+  const last = current.obs && current.obs[current.obs.length-1];
+  const lastDay = last ? isoDay(last.taken_at) : null;
+  n.classList.remove('warn');
+  if(last && v && v === lastDay){
+    n.textContent = 'Same date as your last photo. If it was taken on a different day, change the date — it affects your results.';
+    n.classList.add('warn');
+  }else if(dateSource === 'photo'){ n.textContent = 'Read from the photo.'; }
+  else if(dateSource === 'file'){ n.textContent = 'This may be when the file was saved, not when the photo was taken. Please check it.'; n.classList.add('warn'); }
+  else { n.textContent = ''; }
+  n.hidden = !n.textContent;
+}
+$('#takenAt').addEventListener('change', () => { dateSource = 'user'; checkDate(); });
+
+/* Read the capture date (EXIF DateTimeOriginal) from a JPEG, if present. */
+async function exifDate(file){
+  try{
+    const v = new DataView(await file.slice(0, 262144).arrayBuffer());
+    if(v.byteLength < 12 || v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while(o + 4 < v.byteLength){
+      const marker = v.getUint16(o), len = v.getUint16(o + 2);
+      if((marker & 0xFF00) !== 0xFF00) return null;
+      if(marker === 0xFFE1 && v.getUint32(o + 4) === 0x45786966){
+        const t = o + 10, le = v.getUint16(t) === 0x4949;
+        const g16 = p => v.getUint16(p, le), g32 = p => v.getUint32(p, le);
+        const find = (ifd, tag) => { const n = g16(t + ifd); for(let i = 0; i < n; i++){ const e = t + ifd + 2 + i*12; if(g16(e) === tag) return g32(e + 8); } return null; };
+        const ifd0 = g32(t + 4);
+        let off = null; const ex = find(ifd0, 0x8769);
+        if(ex != null) off = find(ex, 0x9003);
+        if(off == null) off = find(ifd0, 0x0132);
+        if(off == null) return null;
+        let str = ''; for(let i = 0; i < 10; i++) str += String.fromCharCode(v.getUint8(t + off + i));
+        const m = str.match(/^(\d{4}):(\d{2}):(\d{2})/);
+        return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+      }
+      o += 2 + len;
+    }
+  }catch(e){}
+  return null;
+}
+
+/* Shrink big phone photos before upload: faster on mobile data, same analysis quality. */
+async function prepare(file){
+  try{
+    const bmp = await createImageBitmap(file);
+    const max = 1800, s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    if(s === 1 && file.type === 'image/jpeg' && file.size < 4e6) return file;
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width*s); c.height = Math.round(bmp.height*s);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+    return blob ? new File([blob], 'scar.jpg', {type:'image/jpeg'}) : file;
+  }catch(e){ return file; }
+}
+
+$('#photoForm').addEventListener('submit', async e => {
+  if(e.submitter && e.submitter.value === 'cancel') return;
+  e.preventDefault();
+  const err = $('#photoErr');
+  if(!chosen){ err.textContent = 'Take or choose a photo first.'; err.hidden = false; return; }
+  if(!roi){ err.textContent = 'Mark the scar on the photo first: drag a box around it, or tap on it.'; err.hidden = false; $('#preview').scrollIntoView({block:'nearest'}); return; }
+  const f = e.target, btn = $('#photoSave');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Analysing your photo…'; err.hidden = true;
+  try{
+    const fd = new FormData();
+    fd.append('image', await prepare(chosen));
+    if(f.taken_at.value) fd.append('taken_at', f.taken_at.value);
+    fd.append('roi', roi.map(n => n.toFixed(4)).join(','));
+    const shape = f.shape.value;
+    if(shape === 'sunken'){ fd.append('is_depressed', 'true'); fd.append('height_level', '0'); }
+    else fd.append('height_level', shape);
+    ['feels_tight','itchy','painful','growing_beyond_boundary'].forEach(k => fd.append(k, f[k].checked ? 'true' : 'false'));
+    if(f.notes.value.trim()) fd.append('notes', f.notes.value.trim());
+    const res = await api(`/scars/${current.scarId}/observe`, {method:'POST', body:fd});
+    $('#photoDlg').close();
+    const st = res.report.status;
+    toast(st === 'worsening' ? 'Photo analysed — your scar looks worse' : st === 'improving' ? 'Photo analysed — your scar is healing' : 'Photo analysed');
+    await renderScar(current.scarId, true);
+  }catch(ex){ err.textContent = ex.message; err.hidden = false; }
+  finally{ btn.disabled = false; btn.textContent = 'Analyse photo'; }
+});
+
+/* ---------------- viewer ---------------- */
+function openViewer(obsId){
+  const o = current.obs.find(x => x.id === obsId); if(!o) return;
+  $('#viewTitle').textContent = fmtDate(o.taken_at, {weekday:'short', day:'numeric', month:'long', year:'numeric'});
+  $('#viewImg').src = img(o.image_url);
+  $('#viewImg').alt = 'Scar photo from ' + fmtDate(o.taken_at);
+  const bits = [];
+  const vr = $('#viewRoi');
+  if(o.roi){ vr.hidden = false; Object.assign(vr.style, {left:(o.roi[0]*100)+'%', top:(o.roi[1]*100)+'%', width:(o.roi[2]*100)+'%', height:(o.roi[3]*100)+'%'}); } else vr.hidden = true;
+  if(o.faded) bits.push('The scar had faded to almost match your skin in the marked area.');
+  if(!o.photo_ok) bits.push('This photo was unclear, so it isn\'t used for your results.');
+  if(o.notes) bits.push('Note: ' + o.notes);
+  $('#viewNotes').textContent = bits.join(' ');
+  $('#viewDelete').onclick = async () => {
+    $('#viewDlg').close();
+    if(!await confirmBox('Delete this photo?', 'Your results will be recalculated without it.')) return;
+    try{ await api(`/observations/${obsId}`, {method:'DELETE'}); toast('Photo deleted'); renderScar(current.scarId); }
+    catch(e){ toast(e.message); }
+  };
+  $('#viewDlg').showModal();
+}
+
+/* ---------------- device code ---------------- */
+$('#deviceBtn').onclick = () => { $('#devCode').textContent = patientId(); $('#devInput').value = ''; $('#devDlg').showModal(); };
+$('#copyCode').onclick = async () => { try{ await navigator.clipboard.writeText(patientId()); toast('Code copied'); }catch(e){ toast('Select the code and copy it'); } };
+$('#devUse').onclick = () => {
+  const v = $('#devInput').value.trim();
+  if(!/^[\w-]{3,64}$/.test(v)){ toast('That code doesn\'t look right'); return; }
+  store('scar.patient', v); store.mem = {'scar.patient': v};
+  $('#devDlg').close(); toast('Now showing scars for this code'); location.hash = '#/'; renderHome();
+};
+
+// close dialogs when tapping the backdrop
+// (only when the press also started on the backdrop, so finishing a drag outside the photo doesn't close it)
+document.querySelectorAll('dialog').forEach(d => {
+  let downOnBackdrop = false;
+  d.addEventListener('pointerdown', e => { downOnBackdrop = (e.target === d); });
+  d.addEventListener('click', e => { if(e.target === d && downOnBackdrop) d.close(); downOnBackdrop = false; });
+});
+
+route();
+})();
+</script>
+</body>
+</html>

@@ -1,13 +1,6 @@
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-*.log
-.env
+*.pyc
 .venv/
 venv/
+data/
 .pytest_cache/
-uploads/*
-!uploads/.gitkeep
